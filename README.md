@@ -13,6 +13,18 @@ will be the biggest speed-up for another day.
 I do plan to package this as a PR onto the [BattlesnakeOfficial/rules](https://github.com/BattlesnakeOfficial/rules) 
 repo eventually, after some polishing.
 
+## To-Do List
+
+I don't expect this repo to last long enough for the Issue workflow to be worth
+using, so I'll provide here some short-term plans and things I'm thinking of:
+
+* Sending the /end request to Snakes at the end of the game
+* A flag to set request timeout values
+* Making the request-sending parallel by default, to speed up execution
+* A flag to un-parallel request-sending, to better enable debugging
+* Various levels of verbosity (eg- quiet, errors-only, states, or full-maps)
+* Integrating the whole kit-and-kaboodle into the official rules Repo
+
 ## Usage
 
 ### Build It
