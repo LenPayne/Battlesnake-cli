@@ -26,6 +26,7 @@ type InternalSnake struct {
 	URL string
 	Name string
 	ID string
+	API string
 }
 
 type XY struct {
@@ -67,6 +68,15 @@ type ResponsePayload struct {
 type PlayerResponse struct {
 	Move string `json:"move"`
 	Shout string `json:"shout"`
+}
+
+type PingResponse struct {
+	APIVersion string `json:"apiversion"`
+	Author string `json:"author"`
+	Color string `json:"color"`
+	Head string `json:"head"`
+	Tail string `json:"tail"`
+	Version string `json:"version"`
 }
 
 var gameId string
@@ -121,10 +131,11 @@ func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rul
 		panic(err)
 	}
 	for _, snake := range snakes {
+
 		requestBody := getIndividualBoardStateForSnake(state, snake)
 		u, _ := url.ParseRequestURI(snake.URL)
 		u.Path = path.Join(u.Path, "start")
-		_, err := http.Post(u.String(), "application/json", bytes.NewBuffer(requestBody))
+		_, err = http.Post(u.String(), "application/json", bytes.NewBuffer(requestBody))
 		if err != nil {
 			log.Printf("[WARN]: Request to %v failed", u.String())
 		}
@@ -163,7 +174,13 @@ func getMoveForSnake(state *rules.BoardState, snake InternalSnake) (rules.SnakeM
 
 	playerResponse := PlayerResponse{}
 	json.Unmarshal(body, &playerResponse)
-	return rules.SnakeMove{ID: snake.ID, Move: playerResponse.Move}
+	move := playerResponse.Move
+	if snake.API == "1" && move == "up" {
+		move = "down"
+	} else if snake.API == "1" && move == "down" {
+		move = "up"
+	}
+	return rules.SnakeMove{ID: snake.ID, Move: move}
 }
 
 func getIndividualBoardStateForSnake(state *rules.BoardState, snake InternalSnake) ([]byte) {
@@ -265,7 +282,21 @@ func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
 			log.Printf("[WARN]: URL for Name %v is missing: a default URL will be applied\n", opts.Names[i]);
 			snakeURL = "https://example.com"
 		}
-		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id})
+		res, err := http.Get(snakeURL)
+		if err != nil {
+			log.Printf("[WARN]: Request to %v failed", snakeURL)
+		} else if res.Body != nil {
+			defer res.Body.Close()
+	        }
+		body, readErr := ioutil.ReadAll(res.Body)
+	        if readErr != nil {
+		        log.Fatal(readErr)
+		}
+
+	        pingResponse := PingResponse{}
+		json.Unmarshal(body, &pingResponse)
+		api := pingResponse.APIVersion
+		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id, API: api})
 	}
 	return snakes
 }
