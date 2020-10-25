@@ -22,6 +22,7 @@ using, so I'll provide here some short-term plans and things I'm thinking of:
 * A flag to set request timeout values
 * Making the request-sending parallel by default, to speed up execution
 * A flag to un-parallel request-sending, to better enable debugging
+* A flag to use different game types (royale, squad, solo, etc)
 * Various levels of verbosity (eg- quiet, errors-only, states, or full-maps)
 * Integrating the whole kit-and-kaboodle into the official rules Repo
 
