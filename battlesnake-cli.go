@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"bytes"
+	"time"
 	"io/ioutil"
 
 )
@@ -20,6 +21,7 @@ type Options struct {
 	Height int32 `short:"h" long:"height" description:"Height of Board"`
 	Names []string `short:"n" long:"name" description:"Name of Snake"`
 	URLs []string `short:"u" long:"url" description:"URL of Snake"`
+	Timeout int32 `short:"t" long:"timeout" description:"Request Timeout"`
 }
 
 type InternalSnake struct {
@@ -27,6 +29,7 @@ type InternalSnake struct {
 	Name string
 	ID string
 	API string
+	LastMove string
 }
 
 type XY struct {
@@ -82,6 +85,7 @@ type PingResponse struct {
 var gameId string
 var turn int32
 var internalSnakes map[string]InternalSnake
+var httpClient http.Client
 
 func main() {
 	internalSnakes = make(map[string]InternalSnake)
@@ -96,7 +100,7 @@ func main() {
 
 	for v := false; v == false; v, _ = ruleset.IsGameOver(state) {
 		turn++
-		state = createNextBoardState(ruleset, state, snakes)
+		state = createNextBoardState(ruleset, state, internalSnakes)
 		log.Printf("[%v]: %v\n", turn, state)
 	}
 
@@ -106,6 +110,7 @@ func main() {
 		if snake.EliminatedCause == rules.NotEliminated {
 			isDraw = false
 			winner = internalSnakes[snake.ID].Name
+			sendEndRequest(state, internalSnakes[snake.ID])
 		}
 	}
 
@@ -120,6 +125,13 @@ func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rul
 	var opts Options
 	args, err := flags.ParseArgs(&opts, args)
 
+	if opts.Timeout == 0 {
+		opts.Timeout = 500
+	}
+	httpClient = http.Client{
+		Timeout: time.Duration(opts.Timeout) * time.Millisecond,
+	}
+
 	snakes := buildSnakesFromOptions(opts)
 	snakeIds := []string{}
 	for _, snake := range snakes {
@@ -131,11 +143,10 @@ func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rul
 		panic(err)
 	}
 	for _, snake := range snakes {
-
 		requestBody := getIndividualBoardStateForSnake(state, snake)
 		u, _ := url.ParseRequestURI(snake.URL)
 		u.Path = path.Join(u.Path, "start")
-		_, err = http.Post(u.String(), "application/json", bytes.NewBuffer(requestBody))
+		_, err = httpClient.Post(u.String(), "application/json", bytes.NewBuffer(requestBody))
 		if err != nil {
 			log.Printf("[WARN]: Request to %v failed", u.String())
 		}
@@ -160,27 +171,39 @@ func getMoveForSnake(state *rules.BoardState, snake InternalSnake) (rules.SnakeM
 	requestBody := getIndividualBoardStateForSnake(state, snake)
 	u, _ := url.ParseRequestURI(snake.URL)
 	u.Path = path.Join(u.Path, "move")
-	res, err := http.Post(u.String(), "application/json", bytes.NewBuffer(requestBody))
+	res, err := httpClient.Post(u.String(), "application/json", bytes.NewBuffer(requestBody))
+	move := snake.LastMove
 	if err != nil {
 		log.Printf("[WARN]: Request to %v failed", u.String())
 	} else if res.Body != nil {
 		defer res.Body.Close()
+		body, readErr := ioutil.ReadAll(res.Body)
+		if readErr != nil {
+			log.Fatal(readErr)
+		} else {
+			playerResponse := PlayerResponse{}
+			json.Unmarshal(body, &playerResponse)
+			move = playerResponse.Move
+			if snake.API == "1" && move == "up" {
+				move = "down"
+			} else if snake.API == "1" && move == "down" {
+				move = "up"
+			}
+		}
 	}
-
-	body, readErr := ioutil.ReadAll(res.Body)
-	if readErr != nil {
-		log.Fatal(readErr)
-	}
-
-	playerResponse := PlayerResponse{}
-	json.Unmarshal(body, &playerResponse)
-	move := playerResponse.Move
-	if snake.API == "1" && move == "up" {
-		move = "down"
-	} else if snake.API == "1" && move == "down" {
-		move = "up"
-	}
+	snake.LastMove = move
+	internalSnakes[snake.ID] = snake
 	return rules.SnakeMove{ID: snake.ID, Move: move}
+}
+
+func sendEndRequest(state *rules.BoardState, snake InternalSnake) () {
+	requestBody := getIndividualBoardStateForSnake(state, snake)
+	u, _ := url.ParseRequestURI(snake.URL)
+	u.Path = path.Join(u.Path, "end")
+	_, err := httpClient.Post(u.String(), "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		log.Printf("[WARN]: Request to %v failed", u.String())
+	}
 }
 
 func getIndividualBoardStateForSnake(state *rules.BoardState, snake InternalSnake) ([]byte) {
@@ -282,21 +305,22 @@ func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
 			log.Printf("[WARN]: URL for Name %v is missing: a default URL will be applied\n", opts.Names[i]);
 			snakeURL = "https://example.com"
 		}
-		res, err := http.Get(snakeURL)
+		res, err := httpClient.Get(snakeURL)
+		api := "0"
 		if err != nil {
 			log.Printf("[WARN]: Request to %v failed", snakeURL)
 		} else if res.Body != nil {
 			defer res.Body.Close()
-	        }
-		body, readErr := ioutil.ReadAll(res.Body)
-	        if readErr != nil {
-		        log.Fatal(readErr)
-		}
+			body, readErr := ioutil.ReadAll(res.Body)
+		        if readErr != nil {
+			        log.Fatal(readErr)
+			}
 
-	        pingResponse := PingResponse{}
-		json.Unmarshal(body, &pingResponse)
-		api := pingResponse.APIVersion
-		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id, API: api})
+		        pingResponse := PingResponse{}
+			json.Unmarshal(body, &pingResponse)
+			api = pingResponse.APIVersion
+	        }
+		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id, API: api, LastMove: "up"})
 	}
 	return snakes
 }
