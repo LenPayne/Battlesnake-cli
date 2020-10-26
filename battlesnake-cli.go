@@ -100,7 +100,7 @@ func main() {
 
 	for v := false; v == false; v, _ = ruleset.IsGameOver(state) {
 		turn++
-		state = createNextBoardState(ruleset, state, internalSnakes)
+		state = createNextBoardState(ruleset, state, snakes)
 		log.Printf("[%v]: %v\n", turn, state)
 	}
 
