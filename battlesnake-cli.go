@@ -22,6 +22,7 @@ type Options struct {
 	Names []string `short:"n" long:"name" description:"Name of Snake"`
 	URLs []string `short:"u" long:"url" description:"URL of Snake"`
 	Timeout int32 `short:"t" long:"timeout" description:"Request Timeout"`
+	Sequential bool `short:"s" long:"sequential" description:"Use Sequential Processing"`
 }
 
 type InternalSnake struct {
@@ -86,6 +87,7 @@ var gameId string
 var turn int32
 var internalSnakes map[string]InternalSnake
 var httpClient http.Client
+var sequential bool
 
 func main() {
 	internalSnakes = make(map[string]InternalSnake)
@@ -132,6 +134,8 @@ func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rul
 		Timeout: time.Duration(opts.Timeout) * time.Millisecond,
 	}
 
+	sequential = opts.Sequential
+
 	snakes := buildSnakesFromOptions(opts)
 	snakeIds := []string{}
 	for _, snake := range snakes {
@@ -156,8 +160,23 @@ func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rul
 
 func createNextBoardState(ruleset rules.StandardRuleset, state *rules.BoardState, snakes []InternalSnake) (*rules.BoardState) {
 	var moves []rules.SnakeMove
-	for _, snake := range snakes {
-		moves = append(moves, getMoveForSnake(state, snake))
+	if sequential {
+		for _, snake := range snakes {
+			moves = append(moves, getMoveForSnake(state, snake))
+		}
+	} else {
+		c := make(chan rules.SnakeMove, len(snakes))
+		for _, snake := range snakes {
+			go getConcurrentMoveForSnake(state, snake, c)
+		}
+		for range snakes {
+			moves = append(moves, <-c)
+		}
+	}
+	for _, move := range moves {
+		snake := internalSnakes[move.ID]
+		snake.LastMove = move.Move
+		internalSnakes[move.ID] = snake
 	}
 	state, err := ruleset.CreateNextBoardState(state, moves)
 	if err != nil {
@@ -165,6 +184,10 @@ func createNextBoardState(ruleset rules.StandardRuleset, state *rules.BoardState
 		panic(err)
 	}
 	return state
+}
+
+func getConcurrentMoveForSnake(state *rules.BoardState, snake InternalSnake, c chan rules.SnakeMove) {
+	c <- getMoveForSnake(state, snake)
 }
 
 func getMoveForSnake(state *rules.BoardState, snake InternalSnake) (rules.SnakeMove) {
@@ -191,8 +214,6 @@ func getMoveForSnake(state *rules.BoardState, snake InternalSnake) (rules.SnakeM
 			}
 		}
 	}
-	snake.LastMove = move
-	internalSnakes[snake.ID] = snake
 	return rules.SnakeMove{ID: snake.ID, Move: move}
 }
 
