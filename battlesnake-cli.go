@@ -106,12 +106,46 @@ func main() {
 
 	snakes := buildSnakesFromOptions(opts)
 
+	seed := time.Now().UTC().UnixNano()
+
+	var ruleset rules.Ruleset
+	ruleset = getRuleset(opts, seed, turn, snakes)
+	state := initializeBoardFromArgs(ruleset, opts, snakes)
+	for _, snake := range snakes {
+		internalSnakes[snake.ID] = snake
+	}
+
+	for v := false; v == false; v, _ = ruleset.IsGameOver(state) {
+		turn++
+	        ruleset = getRuleset(opts, seed, turn, snakes)
+		state = createNextBoardState(ruleset, state, snakes)
+		log.Printf("[%v]: %v\n", turn, state)
+	}
+
+	var winner string
+	isDraw := true
+	for _, snake := range state.Snakes {
+		if snake.EliminatedCause == rules.NotEliminated {
+			isDraw = false
+			winner = internalSnakes[snake.ID].Name
+			sendEndRequest(state, internalSnakes[snake.ID])
+		}
+	}
+
+	if isDraw {
+		log.Printf("[DONE]: Game completed after %v turns. It was a draw.", turn)
+	} else {
+		log.Printf("[DONE]: Game completed after %v turns. %v is the winner.", turn, winner)
+	}
+}
+
+func getRuleset(opts Options, seed int64, gameTurn int32, snakes []InternalSnake) (rules.Ruleset) {
 	var ruleset rules.Ruleset
 	switch opts.GameType {
 	case "royale":
 		ruleset = &rules.RoyaleRuleset{
-			Seed: time.Now().UTC().UnixNano(),
-			Turn: turn,
+			Seed: seed,
+			Turn: gameTurn,
 			ShrinkEveryNTurns: 10,
 			DamagePerTurn: 1,
 		}
@@ -132,32 +166,7 @@ func main() {
 	default:
 		ruleset = &rules.StandardRuleset{}
 	}
-	state := initializeBoardFromArgs(ruleset, opts, snakes)
-	for _, snake := range snakes {
-		internalSnakes[snake.ID] = snake
-	}
-
-	for v := false; v == false; v, _ = ruleset.IsGameOver(state) {
-		turn++
-		state = createNextBoardState(ruleset, state, snakes)
-		log.Printf("[%v]: %v\n", turn, state)
-	}
-
-	var winner string
-	isDraw := true
-	for _, snake := range state.Snakes {
-		if snake.EliminatedCause == rules.NotEliminated {
-			isDraw = false
-			winner = internalSnakes[snake.ID].Name
-			sendEndRequest(state, internalSnakes[snake.ID])
-		}
-	}
-
-	if isDraw {
-		log.Printf("[DONE]: Game completed after %v turns. It was a draw.", turn)
-	} else {
-		log.Printf("[DONE]: Game completed after %v turns. %v is the winner.", turn, winner)
-	}
+	return ruleset
 }
 
 func initializeBoardFromArgs(ruleset rules.Ruleset, opts Options, snakes []InternalSnake) (*rules.BoardState) {
