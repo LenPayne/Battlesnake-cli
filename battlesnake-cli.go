@@ -13,7 +13,7 @@ import (
 	"bytes"
 	"time"
 	"io/ioutil"
-
+	"strconv"
 )
 
 type Options struct {
@@ -21,8 +21,10 @@ type Options struct {
 	Height int32 `short:"h" long:"height" description:"Height of Board"`
 	Names []string `short:"n" long:"name" description:"Name of Snake"`
 	URLs []string `short:"u" long:"url" description:"URL of Snake"`
+	Squads []string `short:"S" long:"squad" description:"Squad of Snake"`
 	Timeout int32 `short:"t" long:"timeout" description:"Request Timeout"`
 	Sequential bool `short:"s" long:"sequential" description:"Use Sequential Processing"`
+	GameType string `short:"g" long:"gametype" description:"Type of Game Rules"`
 }
 
 type InternalSnake struct {
@@ -31,6 +33,7 @@ type InternalSnake struct {
 	ID string
 	API string
 	LastMove string
+	Squad string
 }
 
 type XY struct {
@@ -90,12 +93,46 @@ var httpClient http.Client
 var sequential bool
 
 func main() {
+	var opts Options
+	_, err := flags.ParseArgs(&opts, os.Args)
+	if err != nil {
+		log.Panic("[PANIC]: Error Parsing Arguments")
+		panic(err)
+	}
+
 	internalSnakes = make(map[string]InternalSnake)
 	gameId = uuid.New().String()
 	turn = 0
 
-	ruleset := rules.StandardRuleset{}
-	state, snakes := initializeBoardFromArgs(ruleset, os.Args)
+	snakes := buildSnakesFromOptions(opts)
+
+	var ruleset rules.Ruleset
+	switch opts.GameType {
+	case "royale":
+		ruleset = &rules.RoyaleRuleset{
+			Seed: time.Now().UTC().UnixNano(),
+			Turn: turn,
+			ShrinkEveryNTurns: 10,
+			DamagePerTurn: 1,
+		}
+	case "squad":
+		squadMap := map[string]string{}
+		for _, snake := range snakes {
+			squadMap[snake.ID] = snake.Squad
+		}
+		ruleset = &rules.SquadRuleset{
+			SquadMap: squadMap,
+			AllowBodyCollisions: true,
+			SharedElimination: true,
+			SharedHealth: true,
+			SharedLength: true,
+		}
+	case "solo":
+		ruleset = &rules.SoloRuleset{}
+	default:
+		ruleset = &rules.StandardRuleset{}
+	}
+	state := initializeBoardFromArgs(ruleset, opts, snakes)
 	for _, snake := range snakes {
 		internalSnakes[snake.ID] = snake
 	}
@@ -123,10 +160,7 @@ func main() {
 	}
 }
 
-func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rules.BoardState, []InternalSnake) {
-	var opts Options
-	args, err := flags.ParseArgs(&opts, args)
-
+func initializeBoardFromArgs(ruleset rules.Ruleset, opts Options, snakes []InternalSnake) (*rules.BoardState) {
 	if opts.Timeout == 0 {
 		opts.Timeout = 500
 	}
@@ -136,7 +170,6 @@ func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rul
 
 	sequential = opts.Sequential
 
-	snakes := buildSnakesFromOptions(opts)
 	snakeIds := []string{}
 	for _, snake := range snakes {
 		snakeIds = append(snakeIds, snake.ID)
@@ -155,10 +188,10 @@ func initializeBoardFromArgs(ruleset rules.StandardRuleset, args []string) (*rul
 			log.Printf("[WARN]: Request to %v failed", u.String())
 		}
 	}
-	return state, snakes
+	return state
 }
 
-func createNextBoardState(ruleset rules.StandardRuleset, state *rules.BoardState, snakes []InternalSnake) (*rules.BoardState) {
+func createNextBoardState(ruleset rules.Ruleset, state *rules.BoardState, snakes []InternalSnake) (*rules.BoardState) {
 	var moves []rules.SnakeMove
 	if sequential {
 		for _, snake := range snakes {
@@ -293,6 +326,7 @@ func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
 	var snakes []InternalSnake
 	numNames := len(opts.Names)
 	numURLs := len(opts.URLs)
+	numSquads := len(opts.Squads)
 	if (numNames > numURLs) {
 		numSnakes = numNames
 	} else {
@@ -301,9 +335,10 @@ func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
 	if (numNames != numURLs) {
 		log.Println("[WARN]: Number of Names and URLs do not match: defaults will be applied to missing values")
 	}
-	for i := 0; i < numSnakes; i++ {
+	for i := int(0); i < numSnakes; i++ {
 		var snakeName string
 		var snakeURL string
+		var snakeSquad string
 
 		id := uuid.New().String()
 
@@ -326,6 +361,17 @@ func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
 			log.Printf("[WARN]: URL for Name %v is missing: a default URL will be applied\n", opts.Names[i]);
 			snakeURL = "https://example.com"
 		}
+
+		if (opts.GameType == "squad") {
+			if (i < numSquads) {
+				snakeSquad = opts.Squads[i]
+			} else {
+				log.Printf("[WARN]: Squad for URL %v is missing: a default squad will be applied\n", opts.URLs[i]);
+				snakeSquad = strconv.Itoa(i / 2);
+			}
+		} else {
+			snakeSquad = id
+		}
 		res, err := httpClient.Get(snakeURL)
 		api := "0"
 		if err != nil {
@@ -341,7 +387,7 @@ func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
 			json.Unmarshal(body, &pingResponse)
 			api = pingResponse.APIVersion
 	        }
-		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id, API: api, LastMove: "up"})
+		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id, API: api, LastMove: "up", Squad: snakeSquad})
 	}
 	return snakes
 }
