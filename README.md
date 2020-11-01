@@ -1,14 +1,8 @@
 # Battlesnake CLI
 
-This is, so far, the result of a weekend project to run games locally. It 
-is not perfect. It is arguably not even good. But it allows playing games by 
-the official rules, and that counts for something.
-
-I had never written a line of Go when I woke up this morning, so I have almost 
-certainly committed grave sins. PRs are welcome.
-
-Notably, I am aware that it doesn't concurrently poll for move requests. That
-will be the biggest speed-up for another day.
+This tool allows running a Battlesnake game locally. There are several command-
+line options, including the ability to send snakes requests sequentially or all
+at the same time, and also to set a timeout limit.
 
 I do plan to package this as a PR onto the [BattlesnakeOfficial/rules](https://github.com/BattlesnakeOfficial/rules) 
 repo eventually, after some polishing.
@@ -24,6 +18,7 @@ using, so I'll provide here some short-term plans and things I'm thinking of:
 * ~~A flag to un-parallel request-sending, to better enable debugging~~
 * ~~A flag to use different game types (royale, squad, solo, etc)~~
 * Various levels of verbosity (eg- quiet, errors-only, states, or full-maps)
+* Integrating the Cobra toolkit for CLI commands
 * Integrating the whole kit-and-kaboodle into the official rules Repo
 
 ## Usage
