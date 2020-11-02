@@ -346,7 +346,7 @@ func xyFromPointArray(ptArray []rules.Point) ([]XY) {
 }
 
 func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
-	bodyChars := []rune{'⌘','⌀','⌬','⍟','⏺','⏼','◉','◍'}
+	bodyChars := []rune{'⌘','⌀','●','⍟','◘','☺','◉','◍'}
 	var numSnakes int
 	var snakes []InternalSnake
 	numNames := len(opts.Names)
@@ -426,7 +426,7 @@ func printMap(state *rules.BoardState, outOfBounds []rules.Point, gameTurn int32
 	}
 	for y := int32(0); y < state.Height; y++ {
 		for x:= int32(0); x < state.Width; x++ {
-			board[x][y] = '.'
+			board[x][y] = '◦'
 		}
 	}
 	for _, oob := range outOfBounds {
@@ -434,9 +434,9 @@ func printMap(state *rules.BoardState, outOfBounds []rules.Point, gameTurn int32
 	}
 	o.WriteString(fmt.Sprintf("Hazards ░: %v\n", outOfBounds))
 	for _, f := range state.Food {
-		board[f.X][f.Y] = '⛀'
+		board[f.X][f.Y] = '⚕'
 	}
-	o.WriteString(fmt.Sprintf("Food ⛀: %v\n", state.Food))
+	o.WriteString(fmt.Sprintf("Food ⚕: %v\n", state.Food))
 	for _, s := range state.Snakes {
 		for _, b := range s.Body {
 			board[b.X][b.Y] = internalSnakes[s.ID].Character
