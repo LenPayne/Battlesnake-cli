@@ -346,7 +346,7 @@ func xyFromPointArray(ptArray []rules.Point) ([]XY) {
 }
 
 func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
-	bodyChars := []rune{'◼','⌀','●','⍟','◘','☺','◻','◪'}
+	bodyChars := []rune{'■','⌀','●','⍟','◘','☺','□','☻'}
 	var numSnakes int
 	var snakes []InternalSnake
 	numNames := len(opts.Names)
