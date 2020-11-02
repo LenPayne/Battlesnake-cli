@@ -14,6 +14,7 @@ import (
 	"time"
 	"io/ioutil"
 	"strconv"
+	"fmt"
 )
 
 type Options struct {
@@ -25,6 +26,7 @@ type Options struct {
 	Timeout int32 `short:"t" long:"timeout" description:"Request Timeout"`
 	Sequential bool `short:"s" long:"sequential" description:"Use Sequential Processing"`
 	GameType string `short:"g" long:"gametype" description:"Type of Game Rules"`
+	ViewMap bool `short:"v" long:"viewmap" description:"View the Map Each Turn"`
 }
 
 type InternalSnake struct {
@@ -34,6 +36,7 @@ type InternalSnake struct {
 	API string
 	LastMove string
 	Squad string
+	Character rune
 }
 
 type XY struct {
@@ -122,7 +125,11 @@ func main() {
 		turn++
 	        ruleset, royale = getRuleset(opts, seed, turn, snakes)
 		state, outOfBounds = createNextBoardState(ruleset, royale, state, outOfBounds, snakes)
-		log.Printf("[%v]: State: %v OutOfBounds: %v\n", turn, state, outOfBounds)
+		if opts.ViewMap {
+			printMap(state, outOfBounds, turn)
+		} else {
+			log.Printf("[%v]: State: %v OutOfBounds: %v\n", turn, state, outOfBounds)
+		}
 	}
 
 	var winner string
@@ -339,6 +346,7 @@ func xyFromPointArray(ptArray []rules.Point) ([]XY) {
 }
 
 func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
+	bodyChars := []rune{'⌘','⌀','⌬','⍟','⏺','⏼','◉','◍'}
 	var numSnakes int
 	var snakes []InternalSnake
 	numNames := len(opts.Names)
@@ -404,7 +412,42 @@ func buildSnakesFromOptions(opts Options) ([]InternalSnake) {
 			json.Unmarshal(body, &pingResponse)
 			api = pingResponse.APIVersion
 	        }
-		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id, API: api, LastMove: "up", Squad: snakeSquad})
+		snakes = append(snakes, InternalSnake{Name: snakeName, URL: snakeURL, ID: id, API: api, LastMove: "up", Squad: snakeSquad, Character: bodyChars[i%8]})
 	}
 	return snakes
+}
+
+func printMap(state *rules.BoardState, outOfBounds []rules.Point, gameTurn int32) {
+	var o bytes.Buffer
+	o.WriteString(fmt.Sprintf("[%v]\n", gameTurn))
+	board := make([][]rune, state.Width)
+	for i := range board {
+		board[i] = make([]rune, state.Height)
+	}
+	for y := int32(0); y < state.Height; y++ {
+		for x:= int32(0); x < state.Width; x++ {
+			board[x][y] = '.'
+		}
+	}
+	for _, oob := range outOfBounds {
+		board[oob.X][oob.Y] = '░'
+	}
+	o.WriteString(fmt.Sprintf("Hazards ░: %v\n", outOfBounds))
+	for _, f := range state.Food {
+		board[f.X][f.Y] = '⛀'
+	}
+	o.WriteString(fmt.Sprintf("Food ⛀: %v\n", state.Food))
+	for _, s := range state.Snakes {
+		for _, b := range s.Body {
+			board[b.X][b.Y] = internalSnakes[s.ID].Character
+		}
+		o.WriteString(fmt.Sprintf("%v %c: %v\n", internalSnakes[s.ID].Name, internalSnakes[s.ID].Character, s))
+	}
+	for y := state.Height - 1; y >= 0; y-- {
+		for x:= int32(0); x < state.Width; x++ {
+			o.WriteRune(board[x][y])
+		}
+		o.WriteString("\n")
+	}
+	log.Printf(o.String())
 }

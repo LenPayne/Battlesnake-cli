@@ -17,7 +17,7 @@ using, so I'll provide here some short-term plans and things I'm thinking of:
 * ~~Making the request-sending parallel by default, to speed up execution~~
 * ~~A flag to un-parallel request-sending, to better enable debugging~~
 * ~~A flag to use different game types (royale, squad, solo, etc)~~
-* Various levels of verbosity (eg- quiet, errors-only, states, or full-maps)
+* ~~Various levels of verbosity (eg- quiet, errors-only, states, or full-maps)~~
 * Integrating the Cobra toolkit for CLI commands
 * Integrating the whole kit-and-kaboodle into the official rules Repo
 
@@ -42,6 +42,7 @@ Application Options:
   -t, --timeout=    Request Timeout
   -s, --sequential  Use Sequential Processing
   -g, --gametype=   Type of Game Rules
+  -v, --viewmap     View the Map Each Turn
 
 Help Options:
   -h, --help        Show this help message
@@ -69,6 +70,36 @@ $ ./battlesnake-cli --width 3 --height 3 --url http://redacted:4567/ --url http:
 2020/10/31 22:05:56 [2]: State: &{3 3 [{1 0}] [{e74892ba-9f0c-4e96-9bde-1a9efaff0ab4 [{0 0} {0 1} {0 2} {0 2}] 99  } {89e20d26-7da7-4964-b0ae-148c8f60f7ee [{2 0} {2 1} {2 2} {2 2}] 99  }]} OutOfBounds: []
 2020/10/31 22:05:56 [3]: State: &{3 3 [{1 2}] [{e74892ba-9f0c-4e96-9bde-1a9efaff0ab4 [{1 0} {0 0} {0 1} {0 2} {0 2}] 100 head-collision 89e20d26-7da7-4964-b0ae-148c8f60f7ee} {89e20d26-7da7-4964-b0ae-148c8f60f7ee [{1 0} {2 0} {2 1} {2 2} {2 2}] 100 head-collision e74892ba-9f0c-4e96-9bde-1a9efaff0ab4}]} OutOfBounds: []
 2020/10/31 22:05:56 [DONE]: Game completed after 3 turns. It was a draw.
+```
+
+### Sample Map Output
+```
+$ ./battlesnake-cli --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --name Snake1 --name Snake2 --name Snake3 --name Snake4 --name Snake5 --name Snake6 --name Snake7 --name Snake8 --width 13 --height 13 --timeout 1000 --viewmap
+2020/11/01 20:45:47 [1]
+Hazards ░: []
+Food ⛀: [{12 10} {8 4} {10 10} {9 11} {8 2} {9 6} {1 11} {9 12}]
+Snake1 ⌘: {1b06b737-99b6-404a-9143-cc9461f4eaf5 [{0 3} {0 2} {0 2}] 99  }
+Snake2 ⌀: {6c3623eb-5aa0-45e1-b261-63690b49f30c [{8 1} {8 0} {8 0}] 99  }
+Snake3 ⌬: {691ef4f1-1dc5-4950-8fee-4fe028ae82f4 [{8 11} {7 11} {7 11}] 99  }
+Snake4 ⍟: {e113ba54-6138-4723-9c28-e1dff2520d79 [{3 2} {3 1} {3 1}] 99  }
+Snake5 ⏺: {9a1c4ae4-7a0c-40d1-89b3-0c9f911cbb08 [{5 2} {5 1} {5 1}] 99  }
+Snake6 ⏼: {b47955b9-6cf9-417d-b034-68513507b35f [{7 4} {6 4} {6 4}] 99  }
+Snake7 ◉: {4e9931fb-9549-4a13-88f9-c59868dd995e [{1 12} {2 12} {2 12}] 99  }
+Snake8 ◍: {fa4372b3-842f-41ee-8d07-dbc010324869 [{4 7} {4 6} {4 6}] 99  }
+.◉◉......⛀...
+.⛀.....⌬⌬⛀...
+..........⛀.⛀
+.............
+.............
+....◍........
+....◍....⛀...
+.............
+......⏼⏼⛀....
+⌘............
+⌘..⍟.⏺..⛀....
+...⍟.⏺..⌀....
+........⌀....
+
 ```
 
 ### Sample Solo Game
