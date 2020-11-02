@@ -75,28 +75,28 @@ $ ./battlesnake-cli --width 3 --height 3 --url http://redacted:4567/ --url http:
 ### Sample Map Output
 ```
 $ ./battlesnake-cli --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --url http://redacted:4567/ --name Snake1 --name Snake2 --name Snake3 --name Snake4 --name Snake5 --name Snake6 --name Snake7 --name Snake8 --width 13 --height 13 --timeout 1000 --viewmap
-2020/11/01 21:45:27 [1]
+2020/11/01 21:43:03 [2]
 Hazards ░: []
-Food ⚕: [{12 10} {8 4} {10 10} {9 11} {8 2} {9 6} {1 11} {9 12}]
-Snake1 ⌘: {24166a90-2d70-46ad-953f-998e55b382e3 [{0 3} {0 2} {0 2}] 99  }
-Snake2 ⌀: {b7f799f5-018e-4f81-bcbc-649c64c3c8bb [{8 1} {8 0} {8 0}] 99  }
-Snake3 ●: {c54b5020-fd6a-4b9f-a08e-c3366ffb7d9b [{8 11} {7 11} {7 11}] 99  }
-Snake4 ⍟: {35e994a6-ead3-44cc-a6e0-a4dccb71d27f [{3 2} {3 1} {3 1}] 99  }
-Snake5 ◘: {ba40de11-2dd9-4fee-9fcd-3abd88344ff0 [{5 2} {5 1} {5 1}] 99  }
-Snake6 ☺: {5859b17e-52a5-4040-900a-b301e42f6cf5 [{7 4} {6 4} {6 4}] 99  }
-Snake7 ◉: {70387479-e466-4c25-96da-00ebaf1f25fd [{1 12} {2 12} {2 12}] 99  }
-Snake8 ◍: {b75a2941-9290-4aaa-96d2-d8485af0c449 [{4 7} {4 6} {4 6}] 99  }
+Food ⚕: [{12 10} {10 10} {9 6} {9 12}]
+Snake1 ⌘: {5730794b-0748-4202-a124-82433cf0012f [{0 4} {0 3} {0 2}] 98  }
+Snake2 ⌀: {dce2c8b0-d97d-4453-a334-db608361442e [{8 2} {8 1} {8 0} {8 0}] 100  }
+Snake3 ●: {c115d57e-2534-4815-aa48-cabc986c3109 [{9 11} {8 11} {7 11} {7 11}] 100  }
+Snake4 ⍟: {e0b5f430-96f7-466c-a78d-419e8377693c [{3 3} {3 2} {3 1}] 98  }
+Snake5 ◘: {9e3e4525-393a-4905-83dd-0b0b5007f2f6 [{5 3} {5 2} {5 1}] 98  }
+Snake6 ☺: {9c1a4ff7-b5d8-4f90-89f7-82f6ca52c652 [{8 4} {7 4} {6 4} {6 4}] 100  }
+Snake7 ◉: {6b81369e-4b2d-4c70-89eb-608db43befe0 [{1 11} {1 12} {2 12} {2 12}] 100  }
+Snake8 ◍: {6cb5a2a6-d974-40b7-a616-5a0d817a8a9e [{5 7} {4 7} {4 6}] 98  }
 ◦◉◉◦◦◦◦◦◦⚕◦◦◦
-◦⚕◦◦◦◦◦●●⚕◦◦◦
+◦◉◦◦◦◦◦●●●◦◦◦
 ◦◦◦◦◦◦◦◦◦◦⚕◦⚕
 ◦◦◦◦◦◦◦◦◦◦◦◦◦
 ◦◦◦◦◦◦◦◦◦◦◦◦◦
-◦◦◦◦◍◦◦◦◦◦◦◦◦
+◦◦◦◦◍◍◦◦◦◦◦◦◦
 ◦◦◦◦◍◦◦◦◦⚕◦◦◦
 ◦◦◦◦◦◦◦◦◦◦◦◦◦
-◦◦◦◦◦◦☺☺⚕◦◦◦◦
-⌘◦◦◦◦◦◦◦◦◦◦◦◦
-⌘◦◦⍟◦◘◦◦⚕◦◦◦◦
+⌘◦◦◦◦◦☺☺☺◦◦◦◦
+⌘◦◦⍟◦◘◦◦◦◦◦◦◦
+⌘◦◦⍟◦◘◦◦⌀◦◦◦◦
 ◦◦◦⍟◦◘◦◦⌀◦◦◦◦
 ◦◦◦◦◦◦◦◦⌀◦◦◦◦
 ```
